@@ -116,10 +116,96 @@ logon) — see the comments in that file.
 
 ---
 
+## Run / test locally (without Intune)
+
+You can deploy the whole thing on a single machine to test it before pushing to
+Intune. The deploy script does exactly what Intune would do — it just needs an
+**elevated** PowerShell (it runs as SYSTEM under Intune; locally you stand in for
+SYSTEM with an admin shell).
+
+1. Open **PowerShell as Administrator**.
+2. Run the deploy script (bypass execution policy for this one process):
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Deploy-WingetAutoUpdate.ps1
+   ```
+
+3. Check the exit code — `0` means install + self-verify passed:
+
+   ```powershell
+   $LASTEXITCODE   # 0 = success, 1 = failed
+   ```
+
+To remove it again locally, run the uninstall script from an elevated shell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Uninstall-WingetAutoUpdate.ps1
+```
+
+---
+
+## Verify it's installed on a device
+
+Run these (no admin needed) to confirm the deployment landed:
+
+```powershell
+# 1. Scheduled Task exists?
+Get-ScheduledTask -TaskName WingetAutoUpdate
+
+# 2. Scripts on disk?
+Test-Path C:\ProgramData\WingetAutoUpdate\Update.ps1
+Test-Path C:\ProgramData\WingetAutoUpdate\Launch.vbs
+
+# 3. When did it last run / what was the result?
+Get-ScheduledTaskInfo -TaskName WingetAutoUpdate |
+    Select-Object LastRunTime, LastTaskResult, NextRunTime
+```
+
+`LastTaskResult = 0` means the last run finished cleanly.
+
+---
+
+## Run it now (don't wait for logon)
+
+The task normally fires 5 minutes after logon. To trigger an update immediately:
+
+```powershell
+Start-ScheduledTask -TaskName WingetAutoUpdate
+```
+
+Then watch the newest log fill up (see below).
+
+---
+
 ## Logs
 
-Check `C:\ProgramData\WingetAutoUpdate\Logs\` on a device to see per-run output,
-and `install.log` in the parent folder for deployment-time messages.
+- **Per-run updater output:** `C:\ProgramData\WingetAutoUpdate\Logs\update_*.log`
+  (one timestamped file per run, latest 10 kept).
+- **Deployment-time messages:** `C:\ProgramData\WingetAutoUpdate\install.log`.
+
+Tail the most recent run live:
+
+```powershell
+Get-ChildItem C:\ProgramData\WingetAutoUpdate\Logs\update_*.log |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 |
+    Get-Content -Wait -Tail 20
+```
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause / fix |
+| ------- | ------------------ |
+| Intune reports **Failed**, exit code 1 | Open `install.log` — the `catch` block logs the exact `ERROR:` and `STACK:`. Usually an ACL or task-registration permission issue. |
+| Log says **`winget not found in PATH`** | winget / App Installer missing on the device. Install [App Installer](https://apps.microsoft.com/detail/9nblggh4nns1) (preinstalled on current Win11). winget is per-user, so the task only sees it once the user has it. |
+| Task exists but **never runs** | It triggers `AtLogOn` only. Sign out and back in, or run `Start-ScheduledTask -TaskName WingetAutoUpdate` to force it. |
+| Updates don't happen at deploy time | By design — the first run is the next logon + 5 min, not deployment time. |
+| Log shows a **network/timeout** error | Device had no connectivity in the 60s probe window. It retries at the next logon. |
+| Nothing in `Logs\`, access-denied | The `Users: Modify` ACL didn't apply. Re-run the deploy script (it's idempotent) from SYSTEM/admin. |
+| A specific app won't upgrade | Run `winget upgrade --all --include-unknown` manually in the user's context to see winget's own error for that package. |
+| `running scripts is disabled on this system` | Use `-ExecutionPolicy Bypass` as shown above. Intune already runs scripts with no signature/policy check. |
 
 ---
 
