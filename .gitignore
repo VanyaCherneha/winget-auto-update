@@ -1,0 +1,14 @@
+# Logs produced at runtime (should never be committed)
+*.log
+Logs/
+
+# Local test artifacts
+ProgramData/
+*.tmp
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
