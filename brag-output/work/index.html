@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #012456; --bg-deep: #011634; --text: #EEF3FA; --muted: #9FB3CF;
+    --accent: #3A96DD; --ok: #16C60C; --alert: #F7768E; --warn: #F9F1A5;
+    --card: rgba(255,255,255,0.055); --line: rgba(255,255,255,0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg-deep); }
+  body { font-family: "Inter", sans-serif; color: var(--text); }
+  #stage { position: absolute; inset: 0; overflow: hidden;
+    background: radial-gradient(ellipse 120% 90% at 50% 40%, var(--bg) 0%, #011d47 55%, var(--bg-deep) 100%); }
+  #glow { position: absolute; width: 1400px; height: 1400px; left: 260px; top: -160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(58,150,221,0.22) 0%, rgba(58,150,221,0) 60%); }
+  #grid { position: absolute; inset: -60px; opacity: 0.07;
+    background-image: linear-gradient(var(--text) 1px, transparent 1px), linear-gradient(90deg, var(--text) 1px, transparent 1px);
+    background-size: 60px 60px; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .abs { position: absolute; }
+  .display { font-family: "Inter Display", "Inter", sans-serif; font-weight: 800; letter-spacing: -0.035em; line-height: 0.98; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .win { background: #012456; border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.3); }
+  .win .bar { height: 44px; background: rgba(255,255,255,0.07); display: flex; align-items: center; padding: 0 18px; gap: 10px;
+    font-family: "Inter", sans-serif; font-size: 17px; color: var(--muted); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.22); }
+  .win .body { padding: 26px 30px; font-family: "JetBrains Mono", monospace; font-size: 23px; line-height: 1.6; white-space: pre; color: #DCE6F2; }
+  .caret { display: inline-block; width: 12px; height: 26px; background: var(--text); vertical-align: -4px; margin-left: 2px; }
+  .row { opacity: 0; }
+  .pill { display: inline-block; padding: 10px 22px; border-radius: 999px; border: 1px solid rgba(58,150,221,0.6);
+    background: rgba(58,150,221,0.12); color: #BFE0FA; font-family: "JetBrains Mono", monospace; font-size: 28px; }
+  .node { position: absolute; top: 470px; width: 380px; padding: 30px 30px 28px; border-radius: 20px; background: var(--card);
+    border: 1px solid var(--line); opacity: 0; }
+  .node .k { font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
+  .node .t { font-family: "Inter Display", sans-serif; font-weight: 700; font-size: 36px; line-height: 1.1; letter-spacing: -0.02em; }
+  .node .s { margin-top: 12px; font-size: 22px; color: var(--muted); }
+  .node .chip { display: block; margin-top: 10px; font-family: "JetBrains Mono", monospace; font-size: 25px; padding: 7px 14px;
+    border-radius: 10px; background: rgba(255,255,255,0.07); }
+  .conn { position: absolute; top: 578px; height: 3px; background: var(--accent); transform-origin: left center; transform: scaleX(0); }
+  .conn::after { content: ""; position: absolute; right: -2px; top: -7px; border-left: 14px solid var(--accent);
+    border-top: 8.5px solid transparent; border-bottom: 8.5px solid transparent; }
+  .card { position: absolute; top: 380px; width: 500px; height: 330px; padding: 44px 40px; border-radius: 24px; background: var(--card);
+    border: 1px solid var(--line); opacity: 0; }
+  .card .ic { width: 64px; height: 64px; border-radius: 16px; background: rgba(22,198,12,0.16); color: var(--ok);
+    display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 800; margin-bottom: 30px; }
+  .card .t { font-family: "Inter Display", sans-serif; font-weight: 800; font-size: 46px; letter-spacing: -0.025em; line-height: 1.05; }
+  .card .s { margin-top: 16px; font-size: 25px; color: var(--muted); line-height: 1.35; }
+  .ok { color: var(--ok); } .acc { color: var(--accent); } .warn { color: var(--warn); } .mut { color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="grid"></div>
+
+  <!-- Scene 1: hook -->
+  <div class="scene" id="s1">
+    <div class="abs display" id="s1h" style="left:140px; top:330px; font-size:132px;">Outdated<br>software</div>
+    <div class="abs display" id="s1a" style="left:140px; top:620px; font-size:84px; color:var(--alert); opacity:0;">= attack surface.</div>
+    <div class="abs win" id="s1w" style="left:930px; top:250px; width:880px;">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:10px">Windows PowerShell</span></div>
+      <div class="body"><span class="acc">PS C:\&gt; </span><span id="s1type"></span><span class="caret" id="s1caret"></span>
+<span class="row mut" id="r0">Name              Version   Available</span>
+<span class="row mut" id="r1">-------------------------------------</span>
+<span class="row" id="r2">7-Zip             23.01     <span class="warn">24.08</span></span>
+<span class="row" id="r3">Mozilla Firefox   128.0     <span class="warn">131.0.3</span></span>
+<span class="row" id="r4">Notepad++         8.6.2     <span class="warn">8.7</span></span>
+<span class="row" id="r5">VLC media player  3.0.18    <span class="warn">3.0.21</span></span>
+<span class="row" id="r6"><span class="warn">4 upgrades available.</span></span></div>
+    </div>
+  </div>
+
+  <!-- Scene 2: the gap -->
+  <div class="scene" id="s2">
+    <div class="abs" style="left:0; right:0; top:300px; text-align:center;">
+      <div id="s2l" style="font-size:34px; color:var(--muted); letter-spacing:0.02em; opacity:0;">Microsoft Intune Plan 1</div>
+      <div id="s2b" class="display" style="margin-top:34px; font-size:124px; opacity:0;"><span style="color:var(--alert)">No</span> Proactive Remediation.</div>
+      <div id="s2s" style="margin-top:46px; font-size:42px; color:var(--muted); opacity:0;">Can't schedule recurring scripts from the cloud.</div>
+    </div>
+  </div>
+
+  <!-- Scene 3: reveal -->
+  <div class="scene" id="s3">
+    <div class="abs" style="left:0; right:0; top:250px; text-align:center;">
+      <div id="s3p" style="opacity:0;"><span class="pill">winget-auto-update</span></div>
+      <div id="s3a" class="display" style="margin-top:44px; font-size:190px;">Deploy once.</div>
+      <div id="s3b" class="display" style="margin-top:34px; font-size:76px; font-weight:700; color:#BFE0FA; opacity:0;">The device keeps itself updated.</div>
+    </div>
+  </div>
+
+  <!-- Scene 4: flow -->
+  <div class="scene" id="s4">
+    <div id="s4t" class="abs display" style="left:0; right:0; top:230px; text-align:center; font-size:76px; font-weight:800; opacity:0;">Intune touches each device <span class="acc">once</span>.</div>
+    <div class="node" id="n1" style="left:90px;"><div class="k">Intune</div><div class="t">Platform Script</div><div class="s">runs once · as SYSTEM</div></div>
+    <div class="conn" id="c1" style="left:478px; width:52px;"></div>
+    <div class="node" id="n2" style="left:540px; top:435px; padding-bottom:24px;"><div class="k">C:\ProgramData\…</div><span class="chip">Update.ps1</span><span class="chip">Launch.vbs</span><span class="chip">Scheduled Task</span></div>
+    <div class="conn" id="c2" style="left:928px; width:52px;"></div>
+    <div class="node" id="n3" style="left:990px;"><div class="k">Trigger</div><div class="t">At every logon</div><div class="s">+5 min delay</div></div>
+    <div class="conn" id="c3" style="left:1378px; width:52px;"></div>
+    <div class="node" id="n4" style="left:1440px; border-color:rgba(22,198,12,0.55); background:rgba(22,198,12,0.08);"><div class="k" style="color:var(--ok)">Every time</div><div class="t mono" style="font-family:'JetBrains Mono'; font-size:31px; font-weight:700; white-space:pre;">winget upgrade
+--all</div><div class="s">silent · user context</div></div>
+  </div>
+
+  <!-- Scene 5: it runs -->
+  <div class="scene" id="s5">
+    <div class="abs win" id="s5w" style="left:120px; top:200px; width:1020px;">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:10px">Logs\update_2026-10-30_09-05-12.log</span></div>
+      <div class="body" style="font-size:22px; line-height:1.7;"><span class="row acc" id="l0">=== winget source update ===</span>
+<span class="row" id="l1">Updating all sources... <span class="ok">Done</span></span>
+<span class="row acc" id="l2">=== winget upgrade --all ===</span>
+<span class="row" id="l3">(1/4) Found 7-Zip [7zip.7zip] Version 24.08</span>
+<span class="row ok" id="l4">Successfully installed</span>
+<span class="row" id="l5">(2/4) Found Mozilla Firefox Version 131.0.3</span>
+<span class="row ok" id="l6">Successfully installed</span>
+<span class="row" id="l7">(3/4) Found Notepad++ Version 8.7</span>
+<span class="row ok" id="l8">Successfully installed</span>
+<span class="row" id="l9">(4/4) Found VLC media player Version 3.0.21</span>
+<span class="row ok" id="l10">Successfully installed</span></div>
+    </div>
+    <div class="abs" style="left:1240px; top:400px; width:600px;">
+      <div id="s5a" class="display" style="font-size:96px; opacity:0;">Fully<br>silent.</div>
+      <div id="s5b" style="margin-top:34px; font-size:38px; color:var(--muted); line-height:1.3; opacity:0;">No console flash to close.</div>
+    </div>
+  </div>
+
+  <!-- Scene 6: features -->
+  <div class="scene" id="s6">
+    <div class="card" id="k1" style="left:150px;"><div class="ic">✓</div><div class="t">No extra licensing</div><div class="s">Intune Plan 1 / Business Premium</div></div>
+    <div class="card" id="k2" style="left:710px;"><div class="ic">✓</div><div class="t">Network-aware</div><div class="s">Waits up to 60s for connectivity</div></div>
+    <div class="card" id="k3" style="left:1270px;"><div class="ic">✓</div><div class="t">Self-verifying</div><div class="s">Exit 0 only when it really landed</div></div>
+  </div>
+
+  <!-- Scene 7: outro -->
+  <div class="scene" id="s7">
+    <div class="abs" style="left:0; right:0; top:300px; text-align:center;">
+      <div id="o1" class="display" style="font-size:150px;">Winget Auto-Update</div>
+      <div id="o2" class="display" style="margin-top:30px; font-size:70px; font-weight:700; color:#BFE0FA; opacity:0;">Patched at every logon.</div>
+      <div id="o3" style="margin-top:90px; opacity:0;">
+        <div class="mono" style="font-size:36px; color:var(--text);">github.com/VanyaCherneha/winget-auto-update</div>
+        <div style="margin-top:20px; font-size:28px; color:var(--muted);">PowerShell 5.1 · dependency-free · MIT</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const prog = (t, t0, d) => clamp((t - t0) / d);
+  const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+  const easeOutBack = (p) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+
+  // Scene windows: fade in fast, dip out before the next scene (staggered, no double exposure).
+  const scenes = [["s1", 0, 3.0], ["s2", 3.0, 6.0], ["s3", 6.0, 9.0], ["s4", 9.0, 14.0],
+                  ["s5", 14.0, 17.0], ["s6", 17.0, 19.5], ["s7", 19.5, 22.5]];
+
+  // Element entrance: fade + rise (or scale), returns nothing; pure function of t.
+  function enter(id, t, t0, { d = 0.4, dy = 30, s0 = 1, back = false } = {}) {
+    const el = $(id), p = prog(t, t0, d), e = back ? easeOutBack(p) : easeOut(p);
+    el.style.opacity = clamp(p * 1.6);
+    el.style.transform = `translateY(${(1 - e) * dy}px) scale(${s0 + (1 - s0) * e})`;
+  }
+
+  const typed = "winget upgrade";
+
+  function render(t) {
+    for (const [id, a, b] of scenes) {
+      const fin = a === 0 ? 1 : prog(t, a, 0.22);
+      const fout = 1 - prog(t, b - 0.18, 0.18);
+      const vis = t >= a && t < b + 0.001;
+      const o = vis ? Math.min(fin, b >= 22 ? 1 : fout) : 0;
+      const el = $(id);
+      el.style.opacity = o;
+      el.style.transform = `translateY(${(1 - easeOut(fin)) * 18}px)`;
+    }
+
+    // Background breathes with the groove (beat = 0.5s), stronger after the drop.
+    const beatPhase = (t % 0.5) / 0.5;
+    const pulse = Math.exp(-beatPhase * 5) * (t >= 6 && t < 21 ? 1 : 0.35);
+    $("glow").style.opacity = 0.75 + 0.25 * pulse;
+    $("glow").style.transform = `translate(${Math.sin(t * 0.35) * 120}px, ${Math.cos(t * 0.27) * 50}px) scale(${1 + 0.03 * pulse})`;
+    $("grid").style.transform = `translate(${(t * 12) % 60}px, ${(t * 6) % 60}px)`;
+
+    // Scene 1
+    enter("s1h", t, 0.0, { d: 0.35, dy: 0, s0: 1.12 });
+    enter("s1w", t, 0.05, { d: 0.45, dy: 40 });
+    const n = Math.floor(clamp((t - 0.25) / 0.75) * typed.length);
+    $("s1type").textContent = typed.slice(0, n);
+    $("s1caret").style.opacity = (t < 1.0 || Math.floor(t * 3) % 2 === 0) ? 1 : 0;
+    ["r0", "r1", "r2", "r3", "r4", "r5", "r6"].forEach((id, i) => {
+      $(id).style.opacity = t >= 1.0 + i * 0.125 ? 1 : 0;
+    });
+    enter("s1a", t, 1.5, { d: 0.3, dy: 0, s0: 1.18, back: true });
+
+    // Scene 2
+    enter("s2l", t, 3.05, { d: 0.35 });
+    enter("s2b", t, 3.5, { d: 0.35, dy: 0, s0: 1.08 });
+    enter("s2s", t, 4.0, { d: 0.4 });
+
+    // Scene 3
+    enter("s3a", t, 6.0, { d: 0.32, dy: 0, s0: 1.25, back: true });
+    enter("s3p", t, 6.5, { d: 0.35, dy: -20 });
+    enter("s3b", t, 7.0, { d: 0.4 });
+
+    // Scene 4
+    enter("s4t", t, 9.05, { d: 0.4 });
+    ["n1", "n2", "n3", "n4"].forEach((id, i) => enter(id, t, 9.5 + i, { d: 0.4, dy: 40 }));
+    ["c1", "c2", "c3"].forEach((id, i) => { $(id).style.transform = `scaleX(${easeOut(prog(t, 10.25 + i, 0.25))})`; });
+
+    // Scene 5
+    enter("s5w", t, 14.0, { d: 0.4, dy: 40 });
+    for (let i = 0; i <= 10; i++) $("l" + i).style.opacity = t >= 14.25 + i * 0.125 ? 1 : 0;
+    enter("s5a", t, 14.5, { d: 0.35, dy: 0, s0: 1.12 });
+    enter("s5b", t, 15.0, { d: 0.4 });
+
+    // Scene 6
+    ["k1", "k2", "k3"].forEach((id, i) => enter(id, t, 17.0 + i * 0.5, { d: 0.4, dy: 60, back: true }));
+
+    // Scene 7
+    enter("o1", t, 19.5, { d: 0.4, dy: 0, s0: 1.15, back: true });
+    enter("o2", t, 20.0, { d: 0.4 });
+    enter("o3", t, 20.5, { d: 0.4 });
+  }
+  window.render = render;
+  render(0);
+</script>
+</body>
+</html>

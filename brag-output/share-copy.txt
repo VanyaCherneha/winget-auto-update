@@ -1,0 +1,1 @@
+Intune Plan 1 can't schedule recurring scripts from the cloud, so the laptop does it itself: one Platform Script, and every logon runs winget upgrade --all silently. No extra licensing, dependency-free PowerShell 5.1. github.com/VanyaCherneha/winget-auto-update

@@ -1,0 +1,4 @@
+# Intermediate render output; regenerate with render.js / music.py
+stills/
+*.mp4
+*.wav
