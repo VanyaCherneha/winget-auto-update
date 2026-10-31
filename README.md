@@ -8,9 +8,9 @@ Outdated software is one of the most common attack surfaces on managed laptops.
 This project closes that gap with a tiny, auditable, dependency-free PowerShell
 deployment.
 
-[![Winget Auto-Update in 22 seconds (click to play)](brag-output/brag.jpg)](brag-output/brag.mp4)
+![Winget Auto-Update in 22 seconds](brag-output/brag-preview.webp)
 
-*22-second overview — click the image to play the video.*
+*22-second overview. [Download the full video with sound (MP4)](brag-output/brag.mp4?raw=true).*
 
 ---
 
